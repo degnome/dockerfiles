@@ -1,0 +1,17 @@
+FROM degnome/devbase:0.10.33
+
+# sha1 points to the v0.10.38-release branch from joyent/node
+ENV NODE_SHA1 0b5731a63cc40c4fe9275c79158fe0a5dd4d1609
+
+RUN curl -SLO "https://github.com/strongloop-forks/node/archive/$NODE_SHA1.tar.gz" \
+        && mkdir -p /usr/local/src/node \
+        && tar -xzf "$NODE_SHA1.tar.gz" -C /usr/local/src/node --strip-components=1 \
+        && (cd /usr/local/src/node && ./configure && make -j4 V= install) \
+        && rm -rf /usr/local/src/node \
+        && npm install -g npm \
+        && npm install -g strongloop \
+        && npm cache clear \
+        && slc --version
+
+# Default to a login shell
+CMD ["/bin/bash", "--login"]

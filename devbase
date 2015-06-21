@@ -1,0 +1,48 @@
+FROM buildpack-deps
+
+# Replace shell with bash so we can source files
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
+# Set debconf to run non-interactively
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
+
+# Install base dependencies
+RUN apt-get update && apt-get install -y -q --no-install-recommends \
+        apt-transport-https \
+        build-essential \
+        ca-certificates \
+        curl \
+        git \
+        libssl-dev \
+        rsync \
+        software-properties-common \
+        wget \
+        man-db \
+        ssh \
+        bash-completion \
+        sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+#Setup the Default User
+RUN useradd -ms /bin/bash developer && \
+    chown -R developer /usr/local && \
+    echo "ALL	ALL = (ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+
+# Set up some semblance of an environment
+WORKDIR /home/developer
+ENV HOME /home/developer
+USER developer
+ENV NVM_DIR /usr/local/nvm
+ENV NODE_VERSION 0.10.33
+
+# Install nvm with node and npm
+RUN curl https://raw.githubusercontent.com/creationix/nvm/v0.20.0/install.sh | bash \
+    && source $NVM_DIR/nvm.sh \
+    && nvm install $NODE_VERSION \
+    && nvm alias default $NODE_VERSION \
+    && nvm use default
+
+ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
+ENV PATH      $NVM_DIR/v$NODE_VERSION/bin:$PATH
